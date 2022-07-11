@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- JAVA와 연결할 Mapper 파일 설정 -->
+<mapper namespace="poly.persistance.mapper.IUserMapper">
+
+	<!-- USER 등록 -->
+	<insert id="insertUserInfo" parameterType="UserDTO">
+		INSERT INTO
+		USER_INFO
+		(
+		USER_SEQ,
+		USER_ID,
+		USER_NAME,
+		USER_EMAIL,
+		USER_PWD,
+		USER_AGE,
+		USER_DEPT,
+		USER_MBTI,
+		USER_STUDY,
+		JOIN_DT
+		)
+		VALUES(
+		(SELECT IFNULL(MAX(USER_SEQ), 0)+1
+		FROM USER_INFO A),
+		#{user_id},
+		#{user_name},
+		#{user_email},
+		#{user_pwd},
+		#{user_age},
+		#{user_dept},
+		#{user_mbti},
+		#{user_study},
+		#{join_dt}
+
+		)
+
+
+	</insert>
+
+	<!-- EMAIL로 회원가입 중복 방지 -->
+	<select id="getUserExists" parameterType="UserDTO"
+		resultType="UserDTO">
+		<!-- case 값 when 조건 then 결과값 end 별칭 -->
+		<!-- select decode(count(*),1,'true','false') as result from test where 
+			id = 'test' pw='123'; -->
+		SELECT CASE WHEN COUNT(*)=0 THEN 'N' ELSE 'Y' END EXISTS_YN
+		FROM
+		USER_INFO
+		WHERE USER_EMAIL = #{user_email}
+	</select>
+
+	<!-- USER 조회 -->
+	<select id="getUserInfo" resultType="UserDTO">
+		SELECT *
+		FROM USER_INFO
+		WHERE
+		USER_ID = #{user_id}
+	</select>
+
+	<select id="userLogin" resultType="UserDTO">
+		SELECT *
+		FROM USER_INFO
+		WHERE
+		USER_ID = #{user_id} AND USER_PWD = #{user_pwd}
+	</select>
+
+	<!-- ID 조회 -->
+	<select id="idCheck" resultType="UserDTO">
+		SELECT USER_ID
+		FROM USER_INFO
+		WHERE
+		USER_ID = #{user_id}
+	</select>
+
+	<!-- 유저가 가입한 스터디정보에 가입한 스터디이름 추가 -->
+	<update id="updateJoinStudy" parameterType="hashMap">
+		UPDATE USER_INFO
+		SET
+		USER_STUDY = CASE WHEN USER_STUDY = ""
+		THEN #{study_name}
+		ELSE
+		(CONCAT(USER_STUDY,',',#{study_name})) END
+		WHERE USER_ID = #{user_id}
+	</update>
+
+	<!-- 유저 가입한 스터디정보에 탈퇴한 스터디이름 제거 -->
+	<update id="updateLeaveStudy" parameterType="hashMap">
+		UPDATE USER_INFO
+		SET
+		USER_STUDY = #{user_study}
+		WHERE USER_ID = #{user_id}
+	</update>
+
+	<update id="updateUserMbti" parameterType="UserDTO">
+		UPDATE USER_INFO
+		SET
+		USER_MBTI = #{user_mbti}
+		WHERE USER_ID = #{user_id}
+	</update>
+
+	<!-- 스터디에 가입한 유저 MBTI 조회 -->
+	<select id="getUserMbti" parameterType="ArrayList"
+		resultType="String">
+		SELECT USER_MBTI
+		FROM USER_INFO
+		WHERE USER_ID IN
+		<foreach collection="list" item="value" index="index" open="("
+			separator="," close=")">
+			#{value}
+		</foreach>
+	</select>
+
+	<!-- 카카오 이메일로 유저 정보 가져오기 -->
+	<select id="getUserKakao" parameterType="hashMap"
+		resultType="UserDTO">
+		SELECT *
+		FROM USER_INFO
+		WHERE
+		USER_EMAIL = #{email}
+	</select>
+
+	<!-- 가입인원의 MBTI가져오기 -->
+	<select id="getMbtiCount" resultType="String">
+		SELECT USER_MBTI
+		FROM
+		USER_INFO
+	</select>
+
+	<!-- 페이스로그인 으로 유저정보 가져오기 -->
+	<select id="getFaceInfo" parameterType="hashMap"
+		resultType="UserDTO">
+		SELECT *
+		FROM USER_INFO
+		WHERE
+		USER_ID = #{user_id}
+	</select>
+
+	<!-- 비밀번호 변경 -->
+	<update id="updateUserPwd" parameterType="UserDTO">
+		UPDATE USER_INFO
+		SET
+		USER_PWD=#{user_pwd}
+		WHERE USER_ID=#{user_id}
+	</update>
+
+	<!-- 회원 탈퇴 -->
+	<delete id="deleteUserInfo" parameterType="UserDTO">
+		DELETE
+		FROM USER_INFO
+		WHERE USER_ID=#{user_id}
+	</delete>
+
+	<!-- 아이디 찾기 -->
+	<select id="findUserid" parameterType="UserDTO"
+		resultType="UserDTO">
+		SELECT USER_ID
+		FROM USER_INFO
+		WHERE USER_EMAIL=#{user_email}
+	</select>
+
+	<select id="findUserPwd" parameterType="UserDTO"
+		resultType="UserDTO">
+		SELECT *
+		FROM USER_INFO
+		WHERE USER_ID=#{user_id} AND
+		USER_EMAIL = #{user_email}
+	</select>
+
+	<delete id="delboardfile" parameterType="UserDTO">
+		DELETE FROM
+		BORD_FILE_INFO
+		WHERE CHG_ID=#{user_id}
+	</delete>
+
+	<delete id="delstudyboard" parameterType="UserDTO">
+		DELETE FROM STUDY_BOARD
+		WHERE USER_ID=#{user_id}
+	</delete>
+
+	<delete id="delstudyinfo" parameterType="UserDTO">
+		DELETE FROM STUDY_INFO
+		WHERE STUDY_CREATOR=#{user_id}
+	</delete>
+
+	<delete id="deluserface" parameterType="UserDTO">
+		DELETE FROM
+		USER_FACE_INFO
+		WHERE USER_ID = #{user_id}
+	</delete>
+
+	<delete id="deluserimg" parameterType="UserDTO">
+		DELETE FROM USER_IMG_INFO
+		CHG_ID = #{user_id}
+
+	</delete>
+
+
+</mapper>

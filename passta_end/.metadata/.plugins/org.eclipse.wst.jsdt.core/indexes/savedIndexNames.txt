@@ -1,0 +1,5 @@
+INDEX VERSION 1.4+C:\Passta_Prj\passta_end\.metadata\.plugins\org.eclipse.wst.jsdt.core\indexes
+801611107.index
+925413160.index
+2538628904.index
+2744641335.index

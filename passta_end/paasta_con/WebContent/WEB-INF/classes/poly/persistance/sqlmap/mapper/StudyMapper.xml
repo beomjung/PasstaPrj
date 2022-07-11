@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- JAVA와 연결할 Mapper 파일 설정 -->
+<mapper namespace="poly.persistance.mapper.IStudyMapper">
+
+	<!-- 스터디 고유번호로 스터디 이름 가져오기 -->
+	<select id="getStudyName" parameterType="String" resultType="String">
+		SELECT STUDY_NAME
+		FROM STUDY_INFO
+		WHERE STUDY_SEQ = #{study_seq}
+	</select>
+	
+	<!-- 스터디 이름으로 스터디 고유번호 가져오기 -->
+	<select id="getStudySeq" parameterType="String" resultType="String">
+		SELECT STUDY_SEQ
+		FROM STUDY_INFO
+		WHERE STUDY_NAME = #{study_name}
+	</select>
+	
+	<!-- 모든 스터디 리스트 조회 쿼리 -->
+	<select id="getAllStudyList" resultType="StudyListDTO">
+		<![CDATA[
+		SELECT *
+		FROM STUDY_INFO
+		WHERE 
+			JOIN_COUNT < 5 
+		]]>
+	</select>
+	
+	<!-- 분야별 스터디 리스트 조회 쿼리 -->
+	<select id="getfieldStudyList" resultType="StudyListDTO">
+		<![CDATA[
+		SELECT *
+		FROM STUDY_INFO
+		WHERE STUDY_FIELD = #{study_field} AND JOIN_COUNT < 5
+		]]>
+	</select>
+	
+	<!-- 스터디그룹 등록 -->
+	<insert id="insertStudyInfo" parameterType="StudyListDTO" >
+		INSERT INTO STUDY_INFO
+			(
+				STUDY_SEQ,
+				STUDY_DT,
+				STUDY_FIELD,
+				STUDY_NAME,
+				STUDY_MEMBER,
+				STUDY_TITLE,
+				STUDY_CONTENTS,
+				STUDY_CREATOR,
+				STUDY_NOTIFY,
+				JOIN_COUNT
+			)
+		VALUES(	
+				(SELECT IFNULL(MAX(STUDY_SEQ), 0)+1 FROM STUDY_INFO S),
+				#{study_dt},
+				#{study_field},
+				#{study_name},
+				#{study_member},
+				#{study_title},
+				#{study_contents},
+				#{study_creator},
+				#{study_notify},
+				1
+			)
+				
+	
+	</insert>
+	
+	<!-- 스터디 이름으로 개설 중복 방지 -->
+	<select id="getStudyExists" parameterType="StudyListDTO" resultType="StudyListDTO">
+		<!-- case 값  when 조건 then 결과값 end 별칭 -->
+		<!-- select decode(count(*),1,'true','false') as result from test where id = 'test' pw='123'; -->
+		SELECT CASE WHEN COUNT(*)=0 THEN 'N' ELSE 'Y' END EXISTS_YN
+		FROM STUDY_INFO
+		WHERE STUDY_NAME = #{study_name}
+	</select>
+	
+	<!-- 특정 스터디정보 가져오기 -->
+	<select id="getStudyInfo" parameterType="String" resultType="StudyListDTO">
+	SELECT *
+	FROM STUDY_INFO
+	WHERE STUDY_NAME = #{study_name}
+	</select>
+	
+	<!-- 가입한 스터디정보 가져오기 -->
+	<select id="getJoinStudyList" parameterType="java.util.List" resultType="StudyListDTO">
+	SELECT *
+	FROM STUDY_INFO
+	WHERE
+	<foreach collection="list" item="study_name" separator="or" open="(" close=")" index="index">
+    STUDY_NAME = #{study_name}
+    </foreach>
+	</select>
+	
+	<!-- 스터디팀원정보에 가입한 유저아이디 추가 -->
+	<update id="updateJoinUser" parameterType="hashMap">
+		UPDATE STUDY_INFO
+		SET STUDY_MEMBER = CASE WHEN STUDY_MEMBER = ""
+							THEN #{user_id}
+							ELSE (CONCAT(STUDY_MEMBER,',',#{user_id})) END , 
+			JOIN_COUNT = JOIN_COUNT +1
+		WHERE STUDY_NAME = #{study_name}
+	</update>
+	
+	<!-- 스터디 팀원정보에 가입한 유저 아이디 삭제 -->
+	<update id="updateLeaveUser" parameterType="hashMap">
+		UPDATE STUDY_INFO
+		SET STUDY_MEMBER = #{sutdy_member} ,
+			JOIN_COUNT = JOIN_COUNT -1
+		WHERE STUDY_NAME = #{study_name}
+	</update>
+	
+	<!-- 스터디 삭제 하기 -->
+	<delete id="deleteStudy" parameterType="String">
+		DELETE FROM STUDY_INFO
+		WHERE STUDY_NAME = #{study_name}
+	</delete>
+	
+	<!-- 스터디 알림창 업데이트 -->
+	<update id="modifyNotice" parameterType="hashMap">
+		UPDATE STUDY_INFO
+		SET STUDY_NOTIFY = #{study_notify}
+		WHERE STUDY_SEQ = #{study_seq}
+	</update>
+</mapper>
